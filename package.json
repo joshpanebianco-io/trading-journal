@@ -1,0 +1,12 @@
+{
+  "name": "trading-ai",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "cd client && npm run dev",
+    "server": "cd server && node --watch index.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
