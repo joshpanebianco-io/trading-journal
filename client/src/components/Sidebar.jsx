@@ -15,7 +15,7 @@ export default function Sidebar() {
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
           <TrendingUp className="h-4 w-4 text-primary-foreground" />
         </div>
-        <span className="text-sm font-semibold tracking-tight">Trading.ai</span>
+        <span className="text-sm font-semibold tracking-tight">Tradelytics.ai</span>
       </div>
 
       <nav className="flex flex-col gap-1 p-3 flex-1">
