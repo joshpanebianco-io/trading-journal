@@ -65,7 +65,7 @@ export default function Dashboard() {
   }
 
   const handleDateChange = (setter, val, fr, to_, sym, dir, stp, ses) => {
-    setter(val); setActiveRange(null)
+    setter(val); setActiveRange('Custom')
     fetchStats(fr, to_, sym, dir, stp, ses)
   }
 
@@ -88,52 +88,65 @@ export default function Dashboard() {
 
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2">
-          {/* Symbol filter */}
-          <Select value={symbol || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSymbol(val); fetchStats(from, to, val, direction, setup, session) }}>
-            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">All Symbols</SelectItem>
-              {filters.symbols.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {/* Combined filter control */}
+          <div className="flex items-center h-9 rounded-md border border-border bg-muted/40">
+            <Select value={symbol || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSymbol(val); fetchStats(from, to, val, direction, setup, session) }}>
+              <SelectTrigger className="border-0 shadow-none rounded-none focus:ring-0 h-full text-xs px-3 w-[120px] bg-transparent">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">All Symbols</SelectItem>
+                {filters.symbols.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
 
-          {/* Direction filter */}
-          <Select value={direction || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setDirection(val); fetchStats(from, to, symbol, val, setup, session) }}>
-            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">All Directions</SelectItem>
-              <SelectItem value="long">Long</SelectItem>
-              <SelectItem value="short">Short</SelectItem>
-            </SelectContent>
-          </Select>
+            <div className="w-px h-5 bg-border shrink-0" />
 
-          {/* Setup filter */}
-          <Select value={setup || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSetup(val); fetchStats(from, to, symbol, direction, val, session) }}>
-            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">All Setups</SelectItem>
-              {filters.setups.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
+            <Select value={direction || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setDirection(val); fetchStats(from, to, symbol, val, setup, session) }}>
+              <SelectTrigger className="border-0 shadow-none rounded-none focus:ring-0 h-full text-xs px-3 w-[120px] bg-transparent">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">All Directions</SelectItem>
+                <SelectItem value="long">Long</SelectItem>
+                <SelectItem value="short">Short</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Session filter */}
-          <Select value={session || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSession(val); fetchStats(from, to, symbol, direction, setup, val) }}>
-            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">All Sessions</SelectItem>
-              {SESSIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
+            <div className="w-px h-5 bg-border shrink-0" />
+
+            <Select value={setup || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSetup(val); fetchStats(from, to, symbol, direction, val, session) }}>
+              <SelectTrigger className="border-0 shadow-none rounded-none focus:ring-0 h-full text-xs px-3 w-[120px] bg-transparent">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">All Setups</SelectItem>
+                {filters.setups.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
+            <div className="w-px h-5 bg-border shrink-0" />
+
+            <Select value={session || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSession(val); fetchStats(from, to, symbol, direction, setup, val) }}>
+              <SelectTrigger className="border-0 shadow-none rounded-none focus:ring-0 h-full text-xs px-3 w-[120px] bg-transparent">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">All Sessions</SelectItem>
+                {SESSIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Vertical separator */}
           <div className="w-px h-5 bg-border" />
 
           {/* Quick range toggles */}
           <div className="flex items-center h-9 rounded-md border border-border bg-muted/40 px-0.5 gap-0.5">
-            {QUICK_RANGES.map(r => (
+            {[...QUICK_RANGES, 'Custom'].map(r => (
               <button
                 key={r}
-                onClick={() => applyQuickRange(r)}
+                onClick={() => r === 'Custom' ? setActiveRange('Custom') : applyQuickRange(r)}
                 className={cn(
                   'px-3 h-7 text-xs font-medium rounded transition-colors',
                   activeRange === r
@@ -146,22 +159,24 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Custom date range */}
-          <div className="flex items-center gap-1.5">
-            <Input
-              type="date"
-              value={from}
-              onChange={e => handleDateChange(setFrom, e.target.value, e.target.value, to, symbol, direction, setup, session)}
-              className="w-[130px] h-9 text-xs px-2"
-            />
-            <span className="text-xs text-muted-foreground">–</span>
-            <Input
-              type="date"
-              value={to}
-              onChange={e => handleDateChange(setTo, e.target.value, from, e.target.value, symbol, direction, setup, session)}
-              className="w-[130px] h-9 text-xs px-2"
-            />
-          </div>
+          {/* Custom date range — only shown when Custom is active */}
+          {activeRange === 'Custom' && (
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="date"
+                value={from}
+                onChange={e => handleDateChange(setFrom, e.target.value, e.target.value, to, symbol, direction, setup, session)}
+                className="w-[130px] h-9 text-xs px-2"
+              />
+              <span className="text-xs text-muted-foreground">–</span>
+              <Input
+                type="date"
+                value={to}
+                onChange={e => handleDateChange(setTo, e.target.value, from, e.target.value, symbol, direction, setup, session)}
+                className="w-[130px] h-9 text-xs px-2"
+              />
+            </div>
+          )}
 
           {hasFilter && (
             <Button variant="ghost" size="sm" onClick={clear} className="h-9 gap-1 text-xs text-muted-foreground px-2">

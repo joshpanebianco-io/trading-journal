@@ -51,15 +51,31 @@ router.get('/', (req, res) => {
   const bestTrade = pnls.length > 0 ? Math.max(...pnls) : 0
   const worstTrade = pnls.length > 0 ? Math.min(...pnls) : 0
 
-  // Avg duration
-  const tradesWithTs = trades.filter(t => t.bought_timestamp && t.sold_timestamp && t.sold_timestamp !== '')
-  let avgDuration = null
-  if (tradesWithTs.length > 0) {
-    const totalSec = tradesWithTs.reduce((sum, t) => {
+  // Avg duration — prefer timestamp diff, fall back to parsing stored duration string
+  function parseDurationSec(str) {
+    if (!str) return null
+    const hms = str.match(/^(\d+):(\d{2}):(\d{2})$/)
+    if (hms) return parseInt(hms[1]) * 3600 + parseInt(hms[2]) * 60 + parseInt(hms[3])
+    const hm = str.match(/(\d+)\s*h(?:r)?\s*(\d+)\s*m(?:in)?/i)
+    if (hm) return parseInt(hm[1]) * 3600 + parseInt(hm[2]) * 60
+    const hOnly = str.match(/^(\d+)\s*h(?:r)?$/i)
+    if (hOnly) return parseInt(hOnly[1]) * 3600
+    const mOnly = str.match(/^(\d+)\s*m(?:in)?$/i)
+    if (mOnly) return parseInt(mOnly[1]) * 60
+    return null
+  }
+
+  const durationsInSec = trades.map(t => {
+    if (t.bought_timestamp && t.sold_timestamp && t.sold_timestamp !== '') {
       const diff = (new Date(t.sold_timestamp) - new Date(t.bought_timestamp)) / 1000
-      return sum + (diff > 0 ? diff : 0)
-    }, 0)
-    const avg = totalSec / tradesWithTs.length
+      if (diff > 0) return diff
+    }
+    return parseDurationSec(t.duration)
+  }).filter(d => d != null)
+
+  let avgDuration = null
+  if (durationsInSec.length > 0) {
+    const avg = durationsInSec.reduce((s, d) => s + d, 0) / durationsInSec.length
     const h = Math.floor(avg / 3600)
     const m = Math.floor((avg % 3600) / 60)
     const parts = []
