@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { previewCSV, importCSV, clearAllTrades } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -15,6 +16,7 @@ export default function Import() {
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [clearConfirm, setClearConfirm] = useState(false)
 
   const handleFile = async (f) => {
     setFile(f); setError(''); setResult(null); setPreview(null)
@@ -45,7 +47,6 @@ export default function Import() {
   }
 
   const handleClearAll = async () => {
-    if (!confirm('Delete ALL trades? This cannot be undone.')) return
     try {
       await clearAllTrades()
       setResult({ cleared: true })
@@ -53,6 +54,8 @@ export default function Import() {
     } catch (err) {
       setError(err.message)
       toast.error('Failed to clear trades')
+    } finally {
+      setClearConfirm(false)
     }
   }
 
@@ -151,11 +154,23 @@ export default function Import() {
         </CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground mb-3">Permanently deletes all trade data from the database.</p>
-          <Button variant="destructive" size="sm" onClick={handleClearAll}>
+          <Button variant="destructive" size="sm" onClick={() => setClearConfirm(true)}>
             <Trash2 className="h-4 w-4" /> Clear All Trades
           </Button>
         </CardContent>
       </Card>
+      <Dialog open={clearConfirm} onOpenChange={v => { if (!v) setClearConfirm(false) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Clear All Trades</DialogTitle>
+            <DialogDescription>This will permanently delete all trade data. This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setClearConfirm(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleClearAll}>Delete All</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

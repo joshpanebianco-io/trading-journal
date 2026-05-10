@@ -49,7 +49,7 @@ export const getSettings = () => request('/settings')
 export const updateSetting = (key, value) =>
   request('/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) })
 
-export const getStats = ({ from, to, symbol, direction, setup, session } = {}) => {
+export const getStats = ({ from, to, symbol, direction, setup, session, timezone } = {}) => {
   const params = new URLSearchParams()
   if (from) params.set('from', from)
   if (to) params.set('to', to)
@@ -57,6 +57,7 @@ export const getStats = ({ from, to, symbol, direction, setup, session } = {}) =
   if (direction) params.set('direction', direction)
   if (setup) params.set('setup', setup)
   if (session) params.set('session', session)
+  if (timezone) params.set('timezone', timezone)
   const qs = params.toString()
   return request(`/stats${qs ? `?${qs}` : ''}`)
 }

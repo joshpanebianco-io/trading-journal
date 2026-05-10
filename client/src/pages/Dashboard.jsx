@@ -38,6 +38,7 @@ export default function Dashboard() {
         from: fr ? dateToUtcStart(fr, timezone) : null,
         to:   to_ ? dateToUtcEnd(to_, timezone) : null,
         symbol: sym || null, direction: dir || null, setup: stp || null, session: ses || null,
+        timezone,
       })
       setStats(data)
     } catch { /* server error shown as empty */ }

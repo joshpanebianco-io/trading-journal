@@ -2,9 +2,21 @@ const express = require('express')
 const router = express.Router()
 const db = require('../db')
 
+const IANA = {
+  AEST: 'Australia/Sydney', AEDT: 'Australia/Sydney', AET: 'Australia/Sydney',
+  EST: 'America/New_York',  EDT: 'America/New_York',  ET:  'America/New_York',
+  UTC: 'UTC',
+}
+
+function utcToLocalDate(utcStr, timezone) {
+  const iana = IANA[timezone] || 'UTC'
+  const d = new Date(utcStr.endsWith('Z') ? utcStr : utcStr + 'Z')
+  return d.toLocaleDateString('en-CA', { timeZone: iana })
+}
+
 router.get('/', (req, res) => {
   const allTrades = db.prepare('SELECT * FROM trades ORDER BY bought_timestamp ASC').all()
-  const { from, to, symbol, direction, setup, session } = req.query
+  const { from, to, symbol, direction, setup, session, timezone } = req.query
 
   const baseFiltered = allTrades.filter(t => {
     if (symbol && t.symbol !== symbol) return false
@@ -107,11 +119,11 @@ router.get('/', (req, res) => {
     }
   })
 
-  // By calendar date (use baseFiltered so date filter doesn't hide days from calendar)
+  // By calendar date — group by local date so calendar matches the trade log filter
   const byDate = {}
   baseFiltered.forEach(t => {
-    const date = t.bought_timestamp ? t.bought_timestamp.slice(0, 10) : null
-    if (!date) return
+    if (!t.bought_timestamp) return
+    const date = timezone ? utcToLocalDate(t.bought_timestamp, timezone) : t.bought_timestamp.slice(0, 10)
     if (!byDate[date]) byDate[date] = { pnl: 0, trades: 0, wins: 0 }
     byDate[date].pnl = parseFloat((byDate[date].pnl + t.pnl).toFixed(2))
     byDate[date].trades++
