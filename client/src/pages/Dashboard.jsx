@@ -57,7 +57,7 @@ export default function Dashboard() {
     else if (range === '3M') start.setMonth(now.getMonth() - 3)
     else if (range === '6M') start.setMonth(now.getMonth() - 6)
     else if (range === 'YTD') start = new Date(now.getFullYear(), 0, 1)
-    const fmt = d => d.toISOString().slice(0, 10)
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     const f = fmt(start), t = fmt(now)
     setFrom(f); setTo(t); setActiveRange(range)
     fetchStats(f, t, symbol, direction, setup, session)
@@ -89,7 +89,7 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-center gap-2">
           {/* Symbol filter */}
           <Select value={symbol || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSymbol(val); fetchStats(from, to, val, direction, setup, session) }}>
-            <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">All Symbols</SelectItem>
               {filters.symbols.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -98,7 +98,7 @@ export default function Dashboard() {
 
           {/* Direction filter */}
           <Select value={direction || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setDirection(val); fetchStats(from, to, symbol, val, setup, session) }}>
-            <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">All Directions</SelectItem>
               <SelectItem value="long">Long</SelectItem>
@@ -108,7 +108,7 @@ export default function Dashboard() {
 
           {/* Setup filter */}
           <Select value={setup || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSetup(val); fetchStats(from, to, symbol, direction, val, session) }}>
-            <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">All Setups</SelectItem>
               {filters.setups.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -117,7 +117,7 @@ export default function Dashboard() {
 
           {/* Session filter */}
           <Select value={session || '_all'} onValueChange={v => { const val = v === '_all' ? '' : v; setSession(val); fetchStats(from, to, symbol, direction, setup, val) }}>
-            <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">All Sessions</SelectItem>
               {SESSIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -128,13 +128,13 @@ export default function Dashboard() {
           <div className="w-px h-5 bg-border" />
 
           {/* Quick range toggles */}
-          <div className="flex items-center rounded-md border border-border bg-muted/40 p-0.5 gap-0.5">
+          <div className="flex items-center h-9 rounded-md border border-border bg-muted/40 px-0.5 gap-0.5">
             {QUICK_RANGES.map(r => (
               <button
                 key={r}
                 onClick={() => applyQuickRange(r)}
                 className={cn(
-                  'px-3 py-1 text-xs font-medium rounded transition-colors',
+                  'px-3 h-7 text-xs font-medium rounded transition-colors',
                   activeRange === r
                     ? 'bg-secondary text-secondary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -151,19 +151,19 @@ export default function Dashboard() {
               type="date"
               value={from}
               onChange={e => handleDateChange(setFrom, e.target.value, e.target.value, to, symbol, direction, setup, session)}
-              className="w-[130px] h-8 text-xs px-2"
+              className="w-[130px] h-9 text-xs px-2"
             />
             <span className="text-xs text-muted-foreground">–</span>
             <Input
               type="date"
               value={to}
               onChange={e => handleDateChange(setTo, e.target.value, from, e.target.value, symbol, direction, setup, session)}
-              className="w-[130px] h-8 text-xs px-2"
+              className="w-[130px] h-9 text-xs px-2"
             />
           </div>
 
           {hasFilter && (
-            <Button variant="ghost" size="sm" onClick={clear} className="h-8 gap-1 text-xs text-muted-foreground px-2">
+            <Button variant="ghost" size="sm" onClick={clear} className="h-9 gap-1 text-xs text-muted-foreground px-2">
               <X className="h-3 w-3" /> Clear
             </Button>
           )}
@@ -171,20 +171,20 @@ export default function Dashboard() {
 
       {/* Primary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 !mt-4">
-        <StatCard label="Total P&L" value={pnlFmt(summary.totalPnl)} color={pnlPos ? 'green' : 'red'} />
-        <StatCard label="Win Rate" value={`${summary.winRate}%`} color={summary.winRate >= 50 ? 'green' : 'red'} />
-        <StatCard label="Profit Factor" value={summary.profitFactor} color={summary.profitFactor >= 1.5 ? 'green' : summary.profitFactor >= 1 ? 'yellow' : 'red'} />
-        <StatCard label="Avg R:R" value={summary.avgRR != null ? `${summary.avgRR}R` : '—'} color="blue" />
-        <StatCard label="Total R" value={summary.totalR != null ? `${summary.totalR}R` : '—'} color={summary.totalR == null ? 'blue' : summary.totalR >= 0 ? 'green' : 'red'} />
+        <StatCard label="Total P&L" value={summary.totalPnl === 0 ? '—' : pnlFmt(summary.totalPnl)} color={summary.totalPnl === 0 ? 'blue' : pnlPos ? 'green' : 'red'} />
+        <StatCard label="Win Rate" value={summary.winRate === 0 ? '—' : `${summary.winRate}%`} color={summary.winRate === 0 ? 'blue' : summary.winRate >= 50 ? 'green' : 'red'} />
+        <StatCard label="Profit Factor" value={summary.profitFactor === 0 ? '—' : summary.profitFactor} color={summary.profitFactor === 0 ? 'blue' : summary.profitFactor >= 1.5 ? 'green' : summary.profitFactor >= 1 ? 'yellow' : 'red'} />
+        <StatCard label="Avg R:R" value={summary.avgRR != null ? `${summary.avgRR}R` : '—'} color={summary.avgRR == null ? 'blue' : summary.avgRR >= 1 ? 'green' : 'red'} />
+        <StatCard label="Total R" value={summary.totalR != null ? `${summary.totalR}R` : '—'} color={summary.totalR == null ? 'blue' : summary.totalR >= 1 ? 'green' : 'red'} />
         <StatCard label="Total Trades" value={summary.totalTrades} sub={`${summary.wins}W / ${summary.losses}L`} color="blue" />
       </div>
 
       {/* Secondary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard label="Best Trade" value={`+$${summary.bestTrade}`} color="green" />
-        <StatCard label="Worst Trade" value={`-$${Math.abs(summary.worstTrade).toFixed(2)}`} color="red" />
-        <StatCard label="Avg Win" value={`+$${summary.avgWin}`} color="green" />
-        <StatCard label="Avg Loss" value={`-$${summary.avgLoss}`} color="red" />
+        <StatCard label="Best Trade" value={summary.bestTrade === 0 ? '—' : `+$${summary.bestTrade}`} color={summary.bestTrade === 0 ? 'blue' : 'green'} />
+        <StatCard label="Worst Trade" value={summary.worstTrade === 0 ? '—' : `-$${Math.abs(summary.worstTrade).toFixed(2)}`} color={summary.worstTrade === 0 ? 'blue' : 'red'} />
+        <StatCard label="Avg Win" value={summary.avgWin === 0 ? '—' : `+$${summary.avgWin}`} color={summary.avgWin === 0 ? 'blue' : 'green'} />
+        <StatCard label="Avg Loss" value={summary.avgLoss === 0 ? '—' : `-$${summary.avgLoss}`} color={summary.avgLoss === 0 ? 'blue' : 'red'} />
         <Card>
           <CardContent className="p-4 relative">
             <div className="absolute top-3 right-3 flex items-center rounded border border-border bg-muted/40 p-0.5 gap-0.5">
@@ -198,8 +198,14 @@ export default function Dashboard() {
               ))}
             </div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">{streakMode === 'win' ? 'Best Streak' : 'Worst Streak'}</p>
-            <p className={cn('text-2xl font-bold tabular-nums leading-none', streakMode === 'win' ? 'text-emerald-400' : 'text-red-400')}>
-              {streakMode === 'win' ? summary.maxWinStreak : summary.maxLossStreak}
+            <p className={cn('text-2xl font-bold tabular-nums leading-none',
+              (streakMode === 'win' ? summary.maxWinStreak : summary.maxLossStreak) === 0
+                ? 'text-blue-400'
+                : streakMode === 'win' ? 'text-emerald-400' : 'text-red-400'
+            )}>
+              {streakMode === 'win'
+                ? (summary.maxWinStreak === 0 ? '—' : summary.maxWinStreak)
+                : (summary.maxLossStreak === 0 ? '—' : summary.maxLossStreak)}
             </p>
             <p className="mt-1.5 text-xs text-muted-foreground uppercase">{streakMode === 'win' ? 'win streak' : 'loss streak'}</p>
           </CardContent>

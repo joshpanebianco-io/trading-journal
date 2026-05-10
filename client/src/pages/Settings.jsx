@@ -8,7 +8,7 @@ export default function Settings() {
   const { timezone, setTimezone } = useSettings()
 
   return (
-    <div className="p-6 space-y-4 max-w-lg">
+    <div className="p-6 space-y-4 max-w-lg mx-auto">
       <h1 className="text-2xl font-semibold">Settings</h1>
 
       <Card>

@@ -86,7 +86,7 @@ function parseRow(row, timezone) {
   const session = getSession(boughtTs)
   const dayOfWeek = getDayOfWeek(boughtTs)
   const hourOfDay = getHourOfDay(boughtTs)
-  const rMultiple = calculateRMultiple(pnl, stopLoss, buyPrice, qty, direction)
+  const rMultiple = calculateRMultiple(direction, buyPrice, sellPrice, stopLoss)
 
   // Use Tradovate fill IDs as unique hash when available
   const buyFillId = pick(row, 'buyFillId')

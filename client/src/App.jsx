@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { SettingsProvider } from './context/SettingsContext'
 import Sidebar from './components/Sidebar.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -21,6 +22,7 @@ export default function App() {
             </Routes>
           </main>
         </div>
+        <Toaster theme="dark" position="bottom-right" richColors />
       </SettingsProvider>
     </BrowserRouter>
   )

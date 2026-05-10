@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Upload, FileText, CheckCircle, AlertTriangle, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { previewCSV, importCSV, clearAllTrades } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,14 +36,24 @@ export default function Import() {
     try {
       const data = await importCSV(file)
       setResult(data); setPreview(null); setFile(null)
-    } catch (err) { setError(err.message) }
+      toast.success(`Imported ${data.imported} of ${data.total} trades`)
+    } catch (err) {
+      setError(err.message)
+      toast.error('Import failed')
+    }
     finally { setImporting(false) }
   }
 
   const handleClearAll = async () => {
     if (!confirm('Delete ALL trades? This cannot be undone.')) return
-    try { await clearAllTrades(); setResult({ cleared: true }) }
-    catch (err) { setError(err.message) }
+    try {
+      await clearAllTrades()
+      setResult({ cleared: true })
+      toast.success('All trades deleted')
+    } catch (err) {
+      setError(err.message)
+      toast.error('Failed to clear trades')
+    }
   }
 
   return (

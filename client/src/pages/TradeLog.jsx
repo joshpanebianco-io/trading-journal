@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Plus, ChevronLeft, ChevronRight, Trash2, X, Download } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { Plus, ChevronLeft, ChevronRight, Trash2, X, Download, Star } from 'lucide-react'
+import { toast } from 'sonner'
 import { getTrades, getTradeFilters, deleteTrade } from '@/lib/api'
 import { useSettings } from '@/context/SettingsContext'
 import { utcToLocal, dateToUtcStart, dateToUtcEnd } from '@/lib/timezone'
@@ -9,14 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import AddTradeModal from '@/components/AddTradeModal'
 import TradeModal from '@/components/TradeModal'
 import { cn } from '@/lib/utils'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 15
 const SESSIONS = ['Asia', 'London', 'Pre-Market', 'NY Open', 'NY Lunch', 'NY PM', 'Other']
+const QUICK_RANGES = ['1W', '1M', '3M', '6M', 'YTD']
 
 export default function TradeLog() {
+  const [searchParams] = useSearchParams()
   const [trades, setTrades] = useState([])
   const [filters, setFilters] = useState({ symbols: [], setups: [] })
   const [page, setPage] = useState(1)
@@ -27,8 +32,10 @@ export default function TradeLog() {
   const [direction, setDirection] = useState('')
   const [setup, setSetup] = useState('')
   const [session, setSession] = useState('')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
+  const [from, setFrom] = useState(searchParams.get('from') || '')
+  const [to, setTo] = useState(searchParams.get('to') || '')
+  const [activeRange, setActiveRange] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const { timezone } = useSettings()
 
@@ -50,10 +57,21 @@ export default function TradeLog() {
     load()
   }, [])
 
-  const handleDelete = async (id, e) => {
+  const handleDelete = (id, e) => {
     e.stopPropagation()
-    if (!confirm('Delete this trade?')) return
-    await deleteTrade(id); load()
+    setDeleteConfirm(id)
+  }
+
+  const confirmDelete = async () => {
+    try {
+      await deleteTrade(deleteConfirm)
+      toast.success('Trade deleted')
+      load()
+    } catch {
+      toast.error('Failed to delete trade')
+    } finally {
+      setDeleteConfirm(null)
+    }
   }
 
   const handleFilter = (setter, val, sym, dir, stp, ses) => { setter(val); load(sym, dir, stp, ses, from, to) }
@@ -63,9 +81,23 @@ export default function TradeLog() {
     load(symbol, direction, setup, session, fr, t)
   }
 
+  const applyQuickRange = (range) => {
+    const now = new Date()
+    let start = new Date()
+    if (range === '1W') start.setDate(now.getDate() - 7)
+    else if (range === '1M') start.setMonth(now.getMonth() - 1)
+    else if (range === '3M') start.setMonth(now.getMonth() - 3)
+    else if (range === '6M') start.setMonth(now.getMonth() - 6)
+    else if (range === 'YTD') start = new Date(now.getFullYear(), 0, 1)
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const f = fmt(start), t = fmt(now)
+    setFrom(f); setTo(t); setActiveRange(range)
+    load(symbol, direction, setup, session, f, t)
+  }
+
   const hasFilter = symbol || direction || setup || session || from || to
   const clear = () => {
-    setSymbol(''); setDirection(''); setSetup(''); setSession(''); setFrom(''); setTo('')
+    setSymbol(''); setDirection(''); setSetup(''); setSession(''); setFrom(''); setTo(''); setActiveRange(null)
     load('', '', '', '', '', '')
   }
 
@@ -155,19 +187,35 @@ export default function TradeLog() {
 
         <div className="w-px h-5 bg-border" />
 
+        {/* Quick ranges */}
+        <div className="flex items-center h-9 rounded-md border border-border bg-muted/40 px-0.5 gap-0.5">
+          {QUICK_RANGES.map(r => (
+            <button
+              key={r}
+              onClick={() => applyQuickRange(r)}
+              className={cn(
+                'px-3 h-7 text-xs font-medium rounded transition-colors',
+                activeRange === r ? 'bg-secondary text-secondary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+
         {/* Custom date range */}
         <div className="flex items-center gap-1.5">
           <Input
             type="date"
             value={from}
-            onChange={e => handleDateChange(setFrom, e.target.value, e.target.value, to)}
+            onChange={e => { setActiveRange(null); handleDateChange(setFrom, e.target.value, e.target.value, to) }}
             className="w-[130px] h-9 text-xs px-2"
           />
           <span className="text-xs text-muted-foreground">–</span>
           <Input
             type="date"
             value={to}
-            onChange={e => handleDateChange(setTo, e.target.value, from, e.target.value)}
+            onChange={e => { setActiveRange(null); handleDateChange(setTo, e.target.value, from, e.target.value) }}
             className="w-[130px] h-9 text-xs px-2"
           />
         </div>
@@ -187,21 +235,23 @@ export default function TradeLog() {
               <TableHead>Date</TableHead>
               <TableHead>Symbol</TableHead>
               <TableHead>Direction</TableHead>
-              <TableHead>Setup</TableHead>
               <TableHead>Session</TableHead>
-              <TableHead className="text-right">Points</TableHead>
-              <TableHead className="text-right">R:R</TableHead>
-              <TableHead className="text-right">P&L</TableHead>
+              <TableHead>Setup</TableHead>
+              <TableHead className="whitespace-nowrap pl-6">Duration</TableHead>
+              <TableHead className="whitespace-nowrap pl-6">Rating</TableHead>
+              <TableHead className="whitespace-nowrap pl-6">Points</TableHead>
+              <TableHead className="whitespace-nowrap pl-6">R:R</TableHead>
+              <TableHead className="whitespace-nowrap pl-6">P&L</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={11} className="text-center py-12 text-muted-foreground">Loading…</TableCell></TableRow>
             ) : paginated.length === 0 ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">No trades found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={11} className="text-center py-12 text-muted-foreground">No trades found</TableCell></TableRow>
             ) : paginated.map(trade => (
-              <TableRow key={trade.id} onClick={() => setSelected(trade)} className="cursor-pointer">
+              <TableRow key={trade.id} onClick={() => setSelected(trade)} className="cursor-pointer group">
                 <TableCell className="text-muted-foreground text-xs">
                   {trade.bought_timestamp ? (() => {
                     const local = utcToLocal(trade.bought_timestamp, timezone)
@@ -217,15 +267,29 @@ export default function TradeLog() {
                 <TableCell>
                   <Badge variant={trade.direction === 'long' ? 'success' : 'danger'}>{trade.direction}</Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground text-sm">{trade.setup_tag || '—'}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{trade.session || '—'}</TableCell>
-                <TableCell className={cn('text-right text-sm tabular-nums', (trade.points ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                <TableCell className="text-muted-foreground text-sm">{trade.setup_tag || '—'}</TableCell>
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap pl-6">
+                  {trade.duration || '—'}
+                </TableCell>
+                <TableCell className="whitespace-nowrap pl-6">
+                  {trade.rating != null ? (
+                    <div className="flex items-center gap-0.5">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={cn('h-3 w-3', trade.rating >= s ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/20')} />
+                      ))}
+                    </div>
+                  ) : '—'}
+                </TableCell>
+                <TableCell className={cn('text-sm tabular-nums whitespace-nowrap pl-6', (trade.points ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400')}>
                   {trade.points != null ? trade.points.toFixed(2) : '—'}
                 </TableCell>
-                <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
+                <TableCell className={cn('text-sm tabular-nums whitespace-nowrap pl-6',
+                  trade.r_multiple == null ? 'text-muted-foreground' : trade.r_multiple >= 1 ? 'text-emerald-400' : 'text-red-400'
+                )}>
                   {trade.r_multiple != null ? `${trade.r_multiple}R` : '—'}
                 </TableCell>
-                <TableCell className={cn('text-right text-sm font-semibold tabular-nums', (trade.pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                <TableCell className={cn('text-sm font-semibold tabular-nums whitespace-nowrap pl-6', (trade.pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400')}>
                   {(trade.pnl ?? 0) >= 0 ? '+' : '-'}${Math.abs(trade.pnl ?? 0).toFixed(2)}
                 </TableCell>
                 <TableCell>
@@ -260,6 +324,19 @@ export default function TradeLog() {
       {selected && (
         <TradeModal trade={selected} open={!!selected} onOpenChange={v => { if (!v) setSelected(null) }} onSaved={() => { setSelected(null); load() }} />
       )}
+
+      <Dialog open={!!deleteConfirm} onOpenChange={v => { if (!v) setDeleteConfirm(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Trade</DialogTitle>
+            <DialogDescription>This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

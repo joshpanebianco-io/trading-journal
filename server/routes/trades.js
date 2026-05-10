@@ -63,7 +63,7 @@ router.post('/', (req, res) => {
     const sess = session || getSession(bought_timestamp)
     const dayOfWeek = getDayOfWeek(bought_timestamp)
     const hourOfDay = getHourOfDay(bought_timestamp)
-    const rMult = r_multiple != null ? r_multiple : calculateRMultiple(pnl, stop_loss, buy_price, qty, direction)
+    const rMult = r_multiple != null ? r_multiple : calculateRMultiple(direction, buy_price, sell_price, stop_loss)
 
     const result = db.prepare(`
       INSERT INTO trades
@@ -90,7 +90,7 @@ router.put('/:id', (req, res) => {
     const sess = session || getSession(bought_timestamp)
     const dayOfWeek = getDayOfWeek(bought_timestamp)
     const hourOfDay = getHourOfDay(bought_timestamp)
-    const rMult = calculateRMultiple(pnl, stop_loss, buy_price, qty, direction)
+    const rMult = calculateRMultiple(direction, buy_price, sell_price, stop_loss)
 
     db.prepare(`
       UPDATE trades SET

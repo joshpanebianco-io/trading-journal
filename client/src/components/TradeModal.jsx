@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Trash2, ImagePlus, X } from 'lucide-react'
+import { Trash2, ImagePlus, X, Star } from 'lucide-react'
+import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { updateTrade, uploadScreenshot, deleteScreenshot } from '@/lib/api'
 import { useSettings } from '@/context/SettingsContext'
@@ -84,9 +84,11 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
         duration: calcDuration(form.bought_timestamp, form.sold_timestamp) || trade.duration || '',
       })
       if (screenshot) await uploadScreenshot(trade.id, screenshot)
+      toast.success('Trade saved')
       onSaved()
     } catch (err) {
       setError(err.message)
+      toast.error('Failed to save trade')
     } finally {
       setSaving(false)
     }
@@ -107,7 +109,7 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
             className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
             onClick={() => setLightbox(null)}
           >
-            <X className="h-6 w-6" />
+            <X className="h-4 w-4" />
           </button>
           <img
             src={lightbox}
@@ -121,15 +123,7 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
       <Dialog open={open} onOpenChange={v => { if (lightbox) { setLightbox(null); return; } onOpenChange(v) }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-base">Edit Trade</DialogTitle>
-              <Badge variant={form.direction === 'long' ? 'success' : 'danger'}>{form.direction}</Badge>
-              {form.pnl !== '' && (
-                <span className={cn('text-sm font-bold ml-auto', pnlPos ? 'text-emerald-400' : 'text-red-400')}>
-                  {pnlPos ? '+' : '-'}${Math.abs(pnlVal).toFixed(2)}
-                </span>
-              )}
-            </div>
+            <DialogTitle className="text-base">Edit Trade</DialogTitle>
           </DialogHeader>
 
           <div className="px-6 py-4 space-y-4">
@@ -141,7 +135,7 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Symbol *">
-                <Input value={form.symbol} onChange={e => set('symbol', e.target.value.toUpperCase())} placeholder="ES, NQ, SPY…" />
+                <Input value={form.symbol} onChange={e => set('symbol', e.target.value.toUpperCase())} placeholder="e.g. MNQM6, MGCM6" />
               </Field>
               <Field label="Direction">
                 <Select value={form.direction} onValueChange={v => set('direction', v)}>
@@ -161,33 +155,35 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
               <Field label="Exit Price *">
                 <Input type="number" step="any" value={form.sell_price} onChange={e => set('sell_price', e.target.value)} placeholder="0.00" />
               </Field>
-              <Field label="Qty">
-                <Input type="number" step="any" value={form.qty} onChange={e => set('qty', e.target.value)} placeholder="1" />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="P&L ($)">
-                <Input type="number" step="any" value={form.pnl} onChange={e => set('pnl', e.target.value)} placeholder="0.00" />
-              </Field>
               <Field label="Stop Loss">
                 <Input type="number" step="any" value={form.stop_loss} onChange={e => set('stop_loss', e.target.value)} placeholder="0.00" />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Entry Time">
-                <Input type="datetime-local" value={form.bought_timestamp} onChange={e => set('bought_timestamp', e.target.value)} />
+              <Field label="Qty">
+                <Input type="number" step="any" value={form.qty} onChange={e => set('qty', e.target.value)} placeholder="1" />
               </Field>
-              <Field label="Exit Time">
-                <Input type="datetime-local" value={form.sold_timestamp} onChange={e => set('sold_timestamp', e.target.value)} />
+              <Field label="P&L ($)">
+                <Input type="number" step="any" value={form.pnl} onChange={e => set('pnl', e.target.value)} placeholder="0.00" />
               </Field>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Entry Time">
+                <Input type="datetime-local" value={form.bought_timestamp} onChange={e => set('bought_timestamp', e.target.value)}
+                  className={!form.bought_timestamp ? '[&::-webkit-datetime-edit]:text-muted-foreground [&::-webkit-datetime-edit-text]:text-muted-foreground' : ''} />
+              </Field>
+              <Field label="Exit Time">
+                <Input type="datetime-local" value={form.sold_timestamp} onChange={e => set('sold_timestamp', e.target.value)}
+                  className={!form.sold_timestamp ? '[&::-webkit-datetime-edit]:text-muted-foreground [&::-webkit-datetime-edit-text]:text-muted-foreground' : ''} />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <Field label="Setup">
                 <Select value={form.setup_tag || '_none'} onValueChange={v => set('setup_tag', v === '_none' ? '' : v)}>
-                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectTrigger className={!form.setup_tag ? 'text-muted-foreground' : ''}><SelectValue placeholder="—" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_none">—</SelectItem>
                     {SETUPS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -196,23 +192,29 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
               </Field>
               <Field label="Session">
                 <Select value={form.session || '_none'} onValueChange={v => set('session', v === '_none' ? '' : v)}>
-                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectTrigger className={!form.session ? 'text-muted-foreground' : ''}><SelectValue placeholder="—" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_none">—</SelectItem>
                     {SESSIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Rating">
-                <Select value={form.rating || '_none'} onValueChange={v => set('rating', v === '_none' ? '' : v)}>
-                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">—</SelectItem>
-                    {[1,2,3,4,5].map(r => <SelectItem key={r} value={String(r)}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </Field>
             </div>
+
+            <Field label="Rating">
+              <div className="flex items-center gap-1.5">
+                {[1,2,3,4,5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => set('rating', form.rating === String(star) ? '' : String(star))}
+                    className="transition-colors focus:outline-none"
+                  >
+                    <Star className={cn('h-4 w-4', parseInt(form.rating) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/30 hover:text-yellow-400/50')} />
+                  </button>
+                ))}
+              </div>
+            </Field>
 
             {/* Screenshot — full width row */}
             <Field label="Screenshot">
@@ -261,7 +263,7 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
             </Field>
 
             <Field label="Notes">
-              <Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Trade notes…" rows={2} />
+              <Textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Trade notes…" rows={5} />
             </Field>
           </div>
 

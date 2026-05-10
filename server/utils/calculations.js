@@ -56,12 +56,14 @@ function getPoints(direction, buyPrice, sellPrice) {
   return parseFloat(diff.toFixed(4))
 }
 
-function calculateRMultiple(pnl, stopLoss, buyPrice, qty, direction) {
-  if (stopLoss == null || !buyPrice || !pnl) return null
-  const riskPerUnit = Math.abs(parseFloat(buyPrice) - parseFloat(stopLoss))
-  if (riskPerUnit === 0) return null
-  const riskTotal = riskPerUnit * (parseFloat(qty) || 1)
-  return parseFloat((pnl / riskTotal).toFixed(2))
+function calculateRMultiple(direction, buyPrice, sellPrice, stopLoss) {
+  if (stopLoss == null || buyPrice == null || sellPrice == null) return null
+  const riskPoints = Math.abs(parseFloat(buyPrice) - parseFloat(stopLoss))
+  if (riskPoints === 0) return null
+  const rewardPoints = direction === 'long'
+    ? parseFloat(sellPrice) - parseFloat(buyPrice)
+    : parseFloat(buyPrice) - parseFloat(sellPrice)
+  return parseFloat((rewardPoints / riskPoints).toFixed(2))
 }
 
 function makeImportHash(row) {
