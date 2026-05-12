@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { BarChart2, List, Upload, TrendingUp, Settings } from 'lucide-react'
+import { BarChart2, List, Upload, Activity, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -12,8 +12,8 @@ export default function Sidebar() {
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-border bg-card">
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-          <TrendingUp className="h-4 w-4 text-primary-foreground" />
+        <div className="flex h-6 w-6 items-center justify-center rounded-md border border-primary">
+          <Activity className="h-3.5 w-3.5 text-primary" />
         </div>
         <span className="text-sm font-semibold tracking-tight">Tradelytics.io</span>
       </div>

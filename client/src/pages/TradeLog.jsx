@@ -144,7 +144,12 @@ export default function TradeLog() {
           <Button size="sm" variant="outline" onClick={exportCsv} disabled={trades.length === 0}>
             <Download className="h-4 w-4" /> Export CSV
           </Button>
-          <Button size="sm" onClick={() => setShowAdd(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAdd(true)}
+            className="border-primary text-primary hover:bg-primary/10 hover:text-primary"
+          >
             <Plus className="h-4 w-4" /> Add Trade
           </Button>
         </div>
