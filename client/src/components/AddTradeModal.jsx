@@ -242,7 +242,13 @@ export default function AddTradeModal({ open, onOpenChange, onSaved }) {
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={saving}>
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              disabled={saving}
+              className="border-primary text-primary hover:bg-primary/10 hover:text-primary"
+            >
               <Plus className="h-4 w-4" />
               {saving ? 'Saving…' : 'Add Trade'}
             </Button>

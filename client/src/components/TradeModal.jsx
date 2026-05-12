@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Trash2, ImagePlus, X, Star } from 'lucide-react'
+import { Trash2, ImagePlus, X, Star, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -269,7 +269,16 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSave}
+              disabled={saving}
+              className="border-primary text-primary hover:bg-primary/10 hover:text-primary"
+            >
+              <Plus className="h-4 w-4" />
+              {saving ? 'Saving…' : 'Save Changes'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
