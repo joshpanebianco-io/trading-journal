@@ -1,8 +1,8 @@
 # Tradelytics.io
 
-A local-first trading journal and analytics app for futures traders. Import fills from your broker, tag setups, attach screenshots, and watch your edge develop over time through a clean, focused dashboard.
+A trading journal and analytics app for futures traders. Import fills from your broker, tag setups, attach screenshots, and watch your edge develop over time through a clean, focused dashboard.
 
-Built as a self-hosted single-user app — your data lives in a local SQLite file on disk, nothing leaves your machine.
+Multi-user out of the box: sign up with **email + password** or **Google**, and each account gets its own private journal backed by **Supabase** (hosted Postgres + Auth + Storage). See **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** to get a project running in a few minutes.
 
 ![Dashboard](readme-screenshots/Screenshot%202026-05-16%20131944.png)
 
@@ -14,7 +14,7 @@ Most trading journals are either heavyweight web apps that hold your data hostag
 
 - **Quick to use.** Drop in a Tradovate (or similar) CSV and the trades are normalised, deduped, and instantly visible.
 - **Honest stats.** Win rate, profit factor, R-multiples, streaks, session/time-of-day breakdowns — the numbers that actually tell you whether you have an edge.
-- **Yours.** SQLite file on disk. Export to CSV any time. No accounts, no cloud.
+- **Yours.** Your own private account, isolated by row-level security so no one else can see your trades. Export to CSV any time.
 
 ---
 
@@ -72,16 +72,14 @@ All timestamps are stored as UTC internally. Set your display timezone once and 
 - Tailwind CSS + Radix UI primitives (shadcn-style components)
 - Recharts (equity curve, day chart)
 - React Router, Sonner (toasts), Lucide icons
+- `@supabase/supabase-js` (auth, data, storage), PapaParse (client-side CSV import)
 
-**Backend**
-- Node.js + Express
-- sql.js (SQLite, file-backed via `trading.db`)
-- multer (screenshot uploads)
-- csv-parse (broker imports)
+**Backend (Supabase)**
+- Supabase Auth — email/password + Google OAuth
+- Postgres with row-level security (each user sees only their own `trades`)
+- Supabase Storage — private per-user bucket for chart screenshots
 
-**Storage**
-- `trading.db` — SQLite database (single file)
-- `screenshots/` — uploaded chart images
+No custom server to run or host — the React app talks to Supabase directly. (The legacy `server/` Express + SQLite code is kept in the repo for reference only.)
 
 ---
 
@@ -90,23 +88,28 @@ All timestamps are stored as UTC internally. Set your display timezone once and 
 ### Prerequisites
 - Node.js 18+
 - npm
+- A Supabase project — follow **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** first (create project, run the SQL, enable Google sign-in, copy your keys into `client/.env.local`).
 
 ### Install
 ```bash
 git clone <your-fork-url>
 cd Trading.ai
-npm install
 cd client && npm install && cd ..
-cd server && npm install && cd ..
 ```
 
 ### Run (development)
 ```bash
 npm run dev
 ```
-This boots both the API (`localhost:3001`) and the Vite client (`localhost:5173`) concurrently.
+This starts the Vite client at `localhost:5173`. There is no separate API server — the app connects to Supabase using the keys in `client/.env.local`.
 
-On Windows you can also double-click `start.bat`, which launches both processes in separate consoles and opens the app in your default browser.
+On Windows you can also double-click `start.bat`, which launches the client and opens the app in your default browser.
+
+### Build for production
+```bash
+cd client && npm run build
+```
+Produces a static site in `client/dist`, deployable to Vercel/Netlify/etc. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in your host, and add the deployed URL to Supabase's Auth → URL Configuration.
 
 ### Build the client
 ```bash
@@ -120,22 +123,22 @@ npm run build
 
 ```
 Trading.ai/
-├── client/                # React + Vite frontend
+├── client/                # React + Vite frontend (the whole app)
 │   ├── src/
-│   │   ├── pages/         # Dashboard, TradeLog, Import, Settings
-│   │   ├── components/    # StatCard, EquityCurve, DayChart, PnlCalendar, TradeModal, ...
-│   │   ├── context/       # SettingsContext (timezone)
-│   │   └── lib/           # api client, timezone helpers
+│   │   ├── pages/         # Login, Dashboard, TradeLog, Import, Settings
+│   │   ├── components/    # Sidebar, StatCard, EquityCurve, PnlCalendar, TradeModal, ...
+│   │   ├── context/       # AuthContext (session), SettingsContext (timezone)
+│   │   └── lib/           # supabase client, api (data layer), calculations, stats, csv, timezone
+│   ├── .env.example       # copy to .env.local with your Supabase keys
 │   └── ...
-├── server/                # Express API
-│   ├── routes/            # trades, upload, stats, settings
-│   ├── utils/             # calculations (R, session, points), timezone
-│   ├── db.js              # sql.js wrapper
-│   └── index.js
-├── screenshots/           # uploaded trade screenshots
+├── supabase/
+│   └── schema.sql         # tables, row-level-security policies, storage bucket
+├── scripts/
+│   └── migrate-to-supabase.mjs   # one-time import of old trading.db data
+├── server/                # legacy Express + SQLite API (kept for reference, unused)
 ├── readme-screenshots/    # images used in this README
-├── trading.db             # SQLite database (created on first run)
-└── start.bat              # Windows one-click launcher
+├── SUPABASE_SETUP.md      # setup walkthrough
+└── start.bat              # Windows launcher (client only)
 ```
 
 ---
@@ -159,23 +162,20 @@ Numbers are tolerant of `$`, `,`, and accounting `(123.45)` notation. Timestamps
 
 ---
 
-## API Reference
+## Data layer
 
-All endpoints are served at `http://localhost:3001`.
+There's no REST API anymore — `client/src/lib/api.js` is the single data layer and calls Supabase directly. Every call runs as the signed-in user and is restricted to their own rows by Postgres row-level security. The functions it exposes:
 
-| Method | Path                      | Purpose                                  |
-|--------|---------------------------|------------------------------------------|
-| GET    | `/api/trades`             | List trades (supports filters)           |
-| GET    | `/api/trades/filters`     | Distinct symbols and setup tags          |
-| GET    | `/api/trades/:id`         | Single trade                             |
-| POST   | `/api/trades`             | Create trade                             |
-| PUT    | `/api/trades/:id`         | Update trade                             |
-| DELETE | `/api/trades/:id`         | Delete trade                             |
-| DELETE | `/api/trades/all`         | Wipe all trades (danger zone)            |
-| POST   | `/api/upload`             | Import CSV                               |
-| GET    | `/api/stats`              | Aggregated dashboard stats               |
-| GET    | `/api/settings`           | Read settings                            |
-| PUT    | `/api/settings`           | Update settings (e.g. timezone)          |
+| Function | Purpose |
+|----------|---------|
+| `getTrades(filters)` | List the user's trades (symbol/direction/setup/session/date filters) |
+| `getTradeFilters()` | Distinct symbols and setup tags |
+| `addTrade(data)` / `updateTrade(id, data)` | Create / update a trade (derived fields computed client-side) |
+| `deleteTrade(id)` / `clearAllTrades()` | Delete one / all (also removes screenshots) |
+| `uploadScreenshot(id, file)` / `deleteScreenshot(id)` / `getScreenshotUrl(path)` | Private-bucket screenshot upload, delete, signed-URL fetch |
+| `previewCSV(file)` / `importCSV(file)` | Parse + import a broker CSV in the browser (deduped by import hash) |
+| `getStats(params)` | Aggregated dashboard stats, computed client-side |
+| `getSettings()` / `updateSetting(key, value)` | Per-user settings (display timezone) |
 
 ---
 
@@ -184,7 +184,6 @@ All endpoints are served at `http://localhost:3001`.
 - Per-setup analytics breakdown
 - Drawdown / MAR / Sharpe view
 - Tag-based filtering and saved views
-- Multi-account support
 - Replay scrub against TradingView screenshots
 
 ---

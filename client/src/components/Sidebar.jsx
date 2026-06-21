@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import { BarChart2, List, Upload, Activity, Settings } from 'lucide-react'
+import { BarChart2, List, Upload, Activity, Settings, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
 
 const links = [
   { to: '/', icon: BarChart2, label: 'Dashboard' },
@@ -9,6 +10,7 @@ const links = [
 ]
 
 export default function Sidebar() {
+  const { user, signOut } = useAuth()
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-border bg-card">
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
@@ -39,7 +41,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-border">
+      <div className="p-3 border-t border-border space-y-1">
         <NavLink
           to="/settings"
           className={({ isActive }) =>
@@ -54,6 +56,21 @@ export default function Sidebar() {
           <Settings className="h-4 w-4 shrink-0" />
           Settings
         </NavLink>
+
+        {user && (
+          <div className="mt-2 border-t border-border pt-2">
+            <p className="px-3 pb-1 text-[11px] text-muted-foreground/70 truncate" title={user.email}>
+              {user.email}
+            </p>
+            <button
+              onClick={() => signOut()}
+              className="flex w-full items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   )

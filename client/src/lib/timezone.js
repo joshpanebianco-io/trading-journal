@@ -5,6 +5,7 @@ export const TIMEZONE_OPTIONS = [
   { value: 'EST',  label: 'EST (UTC−5)' },
   { value: 'EDT',  label: 'EDT (UTC−4)' },
   { value: 'ET',   label: 'ET (Auto DST)' },
+  { value: 'JST',  label: 'JST (UTC+9)' },
   { value: 'UTC',  label: 'UTC' },
 ]
 
@@ -33,6 +34,7 @@ export function getOffsetHours(timezone, date) {
       const end   = nthSunday(11, 1, y)
       return (date >= start && date < end) ? -4 : -5
     }
+    case 'JST': return 9
     default: return 0  // UTC
   }
 }

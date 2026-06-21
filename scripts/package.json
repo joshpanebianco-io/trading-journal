@@ -1,0 +1,14 @@
+{
+  "name": "tradelytics-migration",
+  "private": true,
+  "type": "module",
+  "description": "One-time migration of local trading.db data into Supabase.",
+  "scripts": {
+    "migrate": "node migrate-to-supabase.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "sql.js": "^1.12.0"
+  }
+}

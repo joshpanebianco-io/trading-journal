@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Trash2, ImagePlus, X, Star, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -8,12 +8,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { updateTrade, uploadScreenshot, deleteScreenshot } from '@/lib/api'
+import { updateTrade, uploadScreenshot, deleteScreenshot, getScreenshotUrl } from '@/lib/api'
 import { useSettings } from '@/context/SettingsContext'
 import { utcToLocal, localToUtc } from '@/lib/timezone'
 
 const SESSIONS = ['Asia', 'London', 'Pre-Market', 'NY Open', 'NY Lunch', 'NY PM', 'Other']
-const SETUPS = ['9EMA Pullback', 'VWAP Reclaim', 'VWAP Rejection', 'POC Bounce', 'VAH Break', 'VAL Break', 'iFVG', 'CISD']
 
 function Field({ label, children }) {
   return (
@@ -53,10 +52,22 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
   })
   const [screenshot, setScreenshot] = useState(null)
   const [screenshotPreview, setScreenshotPreview] = useState(null)
+  const [existingUrl, setExistingUrl] = useState(null)
   const [lightbox, setLightbox] = useState(null)
   const [dragging, setDragging] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Screenshots live in a private bucket — resolve a signed URL for the saved one.
+  useEffect(() => {
+    let active = true
+    if (trade?.screenshot_path) {
+      getScreenshotUrl(trade.screenshot_path).then(u => { if (active) setExistingUrl(u) })
+    } else {
+      setExistingUrl(null)
+    }
+    return () => { active = false }
+  }, [trade?.screenshot_path])
 
   if (!trade) return null
 
@@ -96,7 +107,7 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
 
   const pnlVal = parseFloat(form.pnl) || 0
   const pnlPos = pnlVal >= 0
-  const currentScreenshotSrc = screenshotPreview || (trade.screenshot_path ? `/${trade.screenshot_path}` : null)
+  const currentScreenshotSrc = screenshotPreview || existingUrl
 
   return (
     <>
@@ -182,13 +193,7 @@ export default function TradeModal({ trade, open, onOpenChange, onSaved }) {
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Setup">
-                <Select value={form.setup_tag || '_none'} onValueChange={v => set('setup_tag', v === '_none' ? '' : v)}>
-                  <SelectTrigger className={!form.setup_tag ? 'text-muted-foreground' : ''}><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">—</SelectItem>
-                    {SETUPS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Input value={form.setup_tag} onChange={e => set('setup_tag', e.target.value)} placeholder="e.g. VWAP Reclaim" />
               </Field>
               <Field label="Session">
                 <Select value={form.session || '_none'} onValueChange={v => set('session', v === '_none' ? '' : v)}>

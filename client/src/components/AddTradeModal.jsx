@@ -13,7 +13,6 @@ import { useSettings } from '@/context/SettingsContext'
 import { localToUtc } from '@/lib/timezone'
 
 const SESSIONS = ['Asia', 'London', 'Pre-Market', 'NY Open', 'NY Lunch', 'NY PM', 'Other']
-const SETUPS = ['9EMA Pullback', 'VWAP Reclaim', 'VWAP Rejection', 'POC Bounce', 'VAH Break', 'VAL Break', 'iFVG', 'CISD']
 
 const EMPTY = {
   symbol: '', qty: '', direction: '', buy_price: '', sell_price: '',
@@ -171,13 +170,7 @@ export default function AddTradeModal({ open, onOpenChange, onSaved }) {
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Setup">
-                <Select value={form.setup_tag || '_none'} onValueChange={v => set('setup_tag', v === '_none' ? '' : v)}>
-                  <SelectTrigger className={!form.setup_tag ? 'text-muted-foreground' : ''}><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">—</SelectItem>
-                    {SETUPS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Input value={form.setup_tag} onChange={e => set('setup_tag', e.target.value)} placeholder="e.g. VWAP Reclaim" />
               </Field>
               <Field label="Session">
                 <Select value={form.session || '_none'} onValueChange={v => set('session', v === '_none' ? '' : v)}>

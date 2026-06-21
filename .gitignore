@@ -18,6 +18,9 @@ client/dist/
 .env
 .env.local
 
+# MCP server config (contains a Supabase access token)
+.mcp.json
+
 # Logs
 *.log
 npm-debug.log*
