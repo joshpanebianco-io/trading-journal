@@ -4,6 +4,8 @@ A trading journal and analytics app for futures traders. Import fills from your 
 
 Multi-user out of the box: sign up with **email + password** or **Google**, and each account gets its own private journal backed by **Supabase** (hosted Postgres + Auth + Storage). See **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** to get a project running in a few minutes.
 
+Try it out: https://tradelytics-io.vercel.app/
+
 ![Dashboard](readme-screenshots/Screenshot%202026-05-16%20131944.png)
 
 ---
@@ -81,68 +83,6 @@ All timestamps are stored as UTC internally. Set your display timezone once and 
 
 No custom server to run or host — the React app talks to Supabase directly. (The legacy `server/` Express + SQLite code is kept in the repo for reference only.)
 
----
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm
-- A Supabase project — follow **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** first (create project, run the SQL, enable Google sign-in, copy your keys into `client/.env.local`).
-
-### Install
-```bash
-git clone <your-fork-url>
-cd Trading.ai
-cd client && npm install && cd ..
-```
-
-### Run (development)
-```bash
-npm run dev
-```
-This starts the Vite client at `localhost:5173`. There is no separate API server — the app connects to Supabase using the keys in `client/.env.local`.
-
-On Windows you can also double-click `start.bat`, which launches the client and opens the app in your default browser.
-
-### Build for production
-```bash
-cd client && npm run build
-```
-Produces a static site in `client/dist`, deployable to Vercel/Netlify/etc. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in your host, and add the deployed URL to Supabase's Auth → URL Configuration.
-
-### Build the client
-```bash
-cd client
-npm run build
-```
-
----
-
-## Project Structure
-
-```
-Trading.ai/
-├── client/                # React + Vite frontend (the whole app)
-│   ├── src/
-│   │   ├── pages/         # Login, Dashboard, TradeLog, Import, Settings
-│   │   ├── components/    # Sidebar, StatCard, EquityCurve, PnlCalendar, TradeModal, ...
-│   │   ├── context/       # AuthContext (session), SettingsContext (timezone)
-│   │   └── lib/           # supabase client, api (data layer), calculations, stats, csv, timezone
-│   ├── .env.example       # copy to .env.local with your Supabase keys
-│   └── ...
-├── supabase/
-│   └── schema.sql         # tables, row-level-security policies, storage bucket
-├── scripts/
-│   └── migrate-to-supabase.mjs   # one-time import of old trading.db data
-├── server/                # legacy Express + SQLite API (kept for reference, unused)
-├── readme-screenshots/    # images used in this README
-├── SUPABASE_SETUP.md      # setup walkthrough
-└── start.bat              # Windows launcher (client only)
-```
-
----
-
 ## CSV Import Format
 
 The importer tries multiple common column names so most broker exports work out of the box. The fields it understands are:
@@ -158,36 +98,6 @@ The importer tries multiple common column names so most broker exports work out 
 | Exit time  | `soldTimestamp`, `ExitTime`, `Close Time` |
 | Direction  | `direction`, `Side`, `Action`, `Buy/Sell`, `B/S` (optional — inferred from timestamps if omitted) |
 
-Numbers are tolerant of `$`, `,`, and accounting `(123.45)` notation. Timestamps support `MM/DD/YYYY HH:MM:SS` (Tradovate style) and ISO formats.
 
----
-
-## Data layer
-
-There's no REST API anymore — `client/src/lib/api.js` is the single data layer and calls Supabase directly. Every call runs as the signed-in user and is restricted to their own rows by Postgres row-level security. The functions it exposes:
-
-| Function | Purpose |
-|----------|---------|
-| `getTrades(filters)` | List the user's trades (symbol/direction/setup/session/date filters) |
-| `getTradeFilters()` | Distinct symbols and setup tags |
-| `addTrade(data)` / `updateTrade(id, data)` | Create / update a trade (derived fields computed client-side) |
-| `deleteTrade(id)` / `clearAllTrades()` | Delete one / all (also removes screenshots) |
-| `uploadScreenshot(id, file)` / `deleteScreenshot(id)` / `getScreenshotUrl(path)` | Private-bucket screenshot upload, delete, signed-URL fetch |
-| `previewCSV(file)` / `importCSV(file)` | Parse + import a broker CSV in the browser (deduped by import hash) |
-| `getStats(params)` | Aggregated dashboard stats, computed client-side |
-| `getSettings()` / `updateSetting(key, value)` | Per-user settings (display timezone) |
-
----
-
-## Roadmap Ideas
-
-- Per-setup analytics breakdown
-- Drawdown / MAR / Sharpe view
-- Tag-based filtering and saved views
-- Replay scrub against TradingView screenshots
-
----
-
-## License
 
 MIT — do whatever you want, no warranty.
