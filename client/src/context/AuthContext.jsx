@@ -34,7 +34,12 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = () =>
     supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: window.location.origin,
+        // Always show Google's account chooser instead of silently reusing
+        // the one already signed in to the browser.
+        queryParams: { prompt: 'select_account' },
+      },
     })
 
   const signOut = () => supabase.auth.signOut()

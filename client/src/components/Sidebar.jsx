@@ -7,6 +7,7 @@ const links = [
   { to: '/', icon: BarChart2, label: 'Dashboard' },
   { to: '/trades', icon: List, label: 'Trade Log' },
   { to: '/import', icon: Upload, label: 'Import' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 export default function Sidebar() {
@@ -41,37 +42,20 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-border space-y-1">
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors border-l-2',
-              isActive
-                ? 'border-primary bg-primary/10 text-foreground'
-                : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground'
-            )
-          }
-        >
-          <Settings className="h-4 w-4 shrink-0" />
-          Settings
-        </NavLink>
-
-        {user && (
-          <div className="mt-2 border-t border-border pt-2">
-            <p className="px-3 pb-1 text-[11px] text-muted-foreground/70 truncate" title={user.email}>
-              {user.email}
-            </p>
-            <button
-              onClick={() => signOut()}
-              className="flex w-full items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              Sign Out
-            </button>
-          </div>
-        )}
-      </div>
+      {user && (
+        <div className="p-3 border-t border-border">
+          <p className="px-3 pb-1 text-[11px] text-muted-foreground/70 truncate" title={user.email}>
+            {user.email}
+          </p>
+          <button
+            onClick={() => signOut()}
+            className="flex w-full items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Sign Out
+          </button>
+        </div>
+      )}
     </aside>
   )
 }
