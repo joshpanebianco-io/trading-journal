@@ -10,6 +10,16 @@ Try it out: https://tradelytics-io.vercel.app/
 
 ---
 
+## Try it out
+
+Want to see the app in action without hand-entering trades? I've included a sample CSV of dummy data — **183 trades (~71% win rate, weekdays only)** — at **[`sample-data/sample-trades.csv`](./sample-data/sample-trades.csv)**.
+
+1. Sign up with email or Google (locally, or on the live demo at **https://tradelytics-io.vercel.app**).
+2. Open **Import** and drop in `sample-data/sample-trades.csv`.
+3. The Dashboard, Trade Log, and calendar fill instantly — explore the stats, equity curve, and filters with realistic data.
+
+---
+
 ## Why this exists
 
 Most trading journals are either heavyweight web apps that hold your data hostage behind a subscription, or barebones spreadsheets that don't show you anything useful. Tradelytics aims to sit in the middle:
