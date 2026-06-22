@@ -4,17 +4,15 @@ A trading journal and analytics app for futures traders. Import fills from your 
 
 Multi-user out of the box: sign up with **email + password** or **Google**, and each account gets its own private journal backed by **Supabase** (hosted Postgres + Auth + Storage). See **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** to get a project running in a few minutes.
 
-Try it out: https://tradelytics-io.vercel.app/
-
 ![Dashboard](readme-screenshots/Screenshot%202026-05-16%20131944.png)
 
 ---
 
 ## Try it out
 
-Want to see the app in action without hand-entering trades? I've included a sample CSV of dummy data — **183 trades (~71% win rate, weekdays only)** — at **[`sample-data/sample-trades.csv`](./sample-data/sample-trades.csv)**.
+The app is live at **https://tradelytics-io.vercel.app/** — and to see it in action without hand-entering trades, I've included a sample CSV of dummy data (**183 trades, ~71% win rate, weekdays only**) at **[`sample-data/sample-trades.csv`](./sample-data/sample-trades.csv)**.
 
-1. Sign up with email or Google (locally, or on the live demo at **https://tradelytics-io.vercel.app**).
+1. Sign up with email or Google.
 2. Open **Import** and drop in `sample-data/sample-trades.csv`.
 3. The Dashboard, Trade Log, and calendar fill instantly — explore the stats, equity curve, and filters with realistic data.
 
