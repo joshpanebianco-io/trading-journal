@@ -21,6 +21,9 @@ client/dist/
 # MCP server config (contains a Supabase access token)
 .mcp.json
 
+# Local Claude Code permissions (personal, not shared)
+.claude/settings.local.json
+
 # Logs
 *.log
 npm-debug.log*
